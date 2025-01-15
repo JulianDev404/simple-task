@@ -16,7 +16,7 @@ export default function HomeLayout() {
           {Icon && <Icon size={24} color={color} strokeWidth={1.5} />}
           <Text
             style={{ color }}
-            className="text-xs mt-2 text-center" // Asegura el espacio entre el ícono y el texto
+            className="mt-2 text-xs text-center" // Asegura el espacio entre el ícono y el texto
           >
             {title}
           </Text>

@@ -7,13 +7,14 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../constants/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../../constants/firebaseConfig'; // Asegúrate de importar Firestore
+import { db } from '../../constants/firebaseConfig';
 
 export default function SignUpScreen() {
   const [name, setName] = useState('');
@@ -23,12 +24,18 @@ export default function SignUpScreen() {
   const [focusedInput, setFocusedInput] = useState('');
 
   const handleSignUp = async () => {
-    if (!email || !password) {
+    if (!name || !email || !password || !confirmPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return;
+    }
+
     try {
+      // Registrar usuario en Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
@@ -36,16 +43,26 @@ export default function SignUpScreen() {
       );
       const user = userCredential.user;
 
+      // Generar la URL del avatar usando DiceBear
+      const avatarUrl = `https://api.dicebear.com/5.x/initials/png?seed=${encodeURIComponent(
+        name
+      )}`;
+
       // Guardar información adicional en Firestore
       await setDoc(doc(db, 'users', user.uid), {
         name: name,
         email: user.email,
+        avatarUrl: avatarUrl, // Guardar la URL del avatar
         createdAt: new Date(),
       });
 
       router.push('HomeScreen');
     } catch (error) {
-      console.error('Error al registrar usuario', error);
+      console.error('Error al registrar usuario:', error);
+      Alert.alert(
+        'Error',
+        error.message || 'Ocurrió un problema al registrar al usuario'
+      );
     }
   };
 
@@ -63,19 +80,16 @@ export default function SignUpScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <View className="flex-1 justify-center px-6">
-          {/* Contenedor principal centrado */}
+        <View className="justify-center flex-1 px-6">
+          {/* Contenedor principal */}
           <View className="items-center mb-10">
-            {/* Logo o ícono */}
-            <View className="w-20 h-20 bg-gray-800 rounded-full items-center justify-center mb-6 border border-gray-700">
+            <View className="items-center justify-center w-20 h-20 mb-6 bg-gray-800 border border-gray-700 rounded-full">
               <Text className="text-3xl">🚀</Text>
             </View>
-
-            {/* Encabezado */}
-            <Text className="text-3xl font-bold text-white mb-2 text-center">
+            <Text className="mb-2 text-3xl font-bold text-center text-white">
               Crear cuenta
             </Text>
-            <Text className="text-base text-gray-400 text-center">
+            <Text className="text-base text-center text-gray-400">
               Únete a la comunidad de Simple Task
             </Text>
           </View>
@@ -84,7 +98,7 @@ export default function SignUpScreen() {
           <View className="space-y-4">
             {/* Nombre completo */}
             <View>
-              <Text className="text-gray-400 mb-2 font-medium text-sm">
+              <Text className="mb-2 text-sm font-medium text-gray-400">
                 NOMBRE COMPLETO
               </Text>
               <TextInput
@@ -100,7 +114,7 @@ export default function SignUpScreen() {
 
             {/* Email */}
             <View>
-              <Text className="text-gray-400 mb-2 font-medium text-sm">
+              <Text className="mb-2 text-sm font-medium text-gray-400">
                 CORREO ELECTRÓNICO
               </Text>
               <TextInput
@@ -118,7 +132,7 @@ export default function SignUpScreen() {
 
             {/* Contraseña */}
             <View>
-              <Text className="text-gray-400 mb-2 font-medium text-sm">
+              <Text className="mb-2 text-sm font-medium text-gray-400">
                 CONTRASEÑA
               </Text>
               <TextInput
@@ -133,9 +147,9 @@ export default function SignUpScreen() {
               />
             </View>
 
-            {/* Confirmar Contraseña */}
+            {/* Confirmar contraseña */}
             <View>
-              <Text className="text-gray-400 mb-2 font-medium text-sm">
+              <Text className="mb-2 text-sm font-medium text-gray-400">
                 CONFIRMAR CONTRASEÑA
               </Text>
               <TextInput
@@ -151,34 +165,27 @@ export default function SignUpScreen() {
             </View>
           </View>
 
-          {/* Botón de Registro */}
+          {/* Botón de registro */}
           <View className="mt-8">
             <TouchableOpacity
-              className="bg-purple-600 py-4 rounded-xl w-full mb-4 shadow-lg shadow-purple-600/20"
+              className="w-full py-4 mb-4 bg-purple-600 shadow-lg rounded-xl shadow-purple-600/20"
               onPress={handleSignUp}
             >
-              <Text className="text-white text-center font-semibold text-lg">
+              <Text className="text-lg font-semibold text-center text-white">
                 Crear cuenta
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Footer - Login Link */}
+          {/* Footer */}
           <View className="flex-row justify-center mt-6">
             <Text className="text-gray-400">¿Ya tienes una cuenta? </Text>
             <TouchableOpacity onPress={() => router.push('LoginScreen')}>
-              <Text className="text-purple-400 font-semibold">
+              <Text className="font-semibold text-purple-400">
                 Inicia sesión
               </Text>
             </TouchableOpacity>
           </View>
-
-          {/* Términos y condiciones */}
-          <Text className="text-gray-500 text-xs text-center mt-6">
-            Al registrarte, aceptas nuestros{' '}
-            <Text className="text-purple-400">términos y condiciones</Text> y{' '}
-            <Text className="text-purple-400">política de privacidad</Text>
-          </Text>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

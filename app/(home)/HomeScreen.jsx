@@ -5,13 +5,13 @@ import {
   View,
   TouchableOpacity,
   TextInput,
-  ScrollView,
   FlatList,
   Alert,
   Modal,
   Pressable,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -21,7 +21,11 @@ import {
   Flag,
   X,
   Calendar,
-  ChevronDown,
+  Search,
+  User,
+  Filter,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react-native';
 import {
   addTaskToFirestore,
@@ -29,10 +33,16 @@ import {
   updateTaskInFirestore,
   deleteTaskFromFirestore,
 } from '../../utils/tasksUtils';
+import { auth } from '../../constants/firebaseConfig';
+import { fetchUserInfo } from '../../utils/firestoreUtils';
 
 export default function HomeScreen() {
   const [tasks, setTasks] = useState([]);
+  const [filteredTasks, setFilteredTasks] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState('all'); // all, pending, completed
+  const [userInfo, setUserInfo] = useState(null);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -106,9 +116,9 @@ export default function HomeScreen() {
 
   const getPriorityColor = (priority) => {
     const colors = {
-      high: 'bg-red-500',
+      high: 'bg-red-600',
       medium: 'bg-yellow-500',
-      low: 'bg-green-500',
+      low: 'bg-green-600',
     };
     return colors[priority] || 'bg-gray-500';
   };
@@ -166,6 +176,61 @@ export default function HomeScreen() {
     </View>
   );
 
+  useEffect(() => {
+    const fetchData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const data = await fetchUserInfo(user.uid);
+        setUserInfo(data);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    filterTasks();
+  }, [tasks, searchQuery, selectedFilter]);
+
+  const filterTasks = () => {
+    let result = [...tasks];
+
+    // Aplicar filtro de estado
+    if (selectedFilter !== 'all') {
+      result = result.filter((task) =>
+        selectedFilter === 'completed' ? task.completed : !task.completed
+      );
+    }
+
+    // Aplicar búsqueda
+    if (searchQuery) {
+      result = result.filter(
+        (task) =>
+          task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          task.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredTasks(result);
+  };
+
+  const TaskStats = () => (
+    <View className="flex-row justify-between px-2 mb-4">
+      <View className="flex-row items-center">
+        <CheckCircle2 size={16} color="#22C55E" />
+        <Text className="ml-2 text-gray-400">
+          {tasks.filter((t) => t.completed).length} completadas
+        </Text>
+      </View>
+      <View className="flex-row items-center">
+        <AlertCircle size={16} color="#EF4444" />
+        <Text className="ml-2 text-gray-400">
+          {tasks.filter((t) => !t.completed).length} pendientes
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-gray-900" edges={['top']}>
       <StatusBar style="light" />
@@ -173,19 +238,72 @@ export default function HomeScreen() {
       {/* Header */}
       <View className="px-6 py-4 border-b border-gray-800">
         <View className="flex-row items-center justify-between">
-          <Text className="text-2xl font-bold text-white">Simple Task</Text>
+          <View>
+            <Text className="text-2xl font-bold text-white">
+              Bienvenido, {userInfo?.name?.split(' ')[0] || 'Usuario'}
+            </Text>
+          </View>
           <TouchableOpacity
             onPress={() => router.push('ProfileScreen')}
-            className="items-center justify-center w-10 h-10 bg-gray-800 rounded-full"
+            className="w-10 h-10 overflow-hidden bg-gray-800 rounded-full"
           >
-            <Text className="text-white">👤</Text>
+            {userInfo?.avatarUrl ? (
+              <Image
+                source={{ uri: userInfo.avatarUrl }}
+                className="w-full h-full"
+              />
+            ) : (
+              <View className="items-center justify-center w-full h-full">
+                <User size={24} color="#9CA3AF" />
+              </View>
+            )}
           </TouchableOpacity>
+        </View>
+
+        {/* Barra de búsqueda y filtros */}
+        <View className="mt-4 ">
+          <View className="flex-row items-center px-4 py-2 bg-gray-800 rounded-xl">
+            <Search size={20} color="#9CA3AF" />
+            <TextInput
+              className="flex-1 ml-2 text-white"
+              placeholder="Buscar tareas..."
+              placeholderTextColor="#6B7280"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              keyboardAppearance="dark"
+            />
+          </View>
+
+          <View className="flex-row gap-2 mt-4">
+            {['all', 'pending', 'completed'].map((filter) => (
+              <TouchableOpacity
+                key={filter}
+                onPress={() => setSelectedFilter(filter)}
+                className={`px-4 py-2 rounded-xl ${
+                  selectedFilter === filter ? 'bg-purple-600' : 'bg-gray-800'
+                }`}
+              >
+                <Text
+                  className={`${
+                    selectedFilter === filter ? 'text-white' : 'text-gray-400'
+                  } capitalize`}
+                >
+                  {filter === 'all'
+                    ? 'Todas'
+                    : filter === 'pending'
+                    ? 'Pendientes'
+                    : 'Completadas'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
       </View>
 
       {/* Lista de tareas */}
       <FlatList
-        data={tasks}
+        data={filteredTasks}
+        ListHeaderComponent={<TaskStats />}
         renderItem={renderTask}
         keyExtractor={(item) => item.id}
         className="px-6 pt-4"
@@ -194,7 +312,13 @@ export default function HomeScreen() {
         ListEmptyComponent={
           <View className="items-center justify-center py-10">
             <Text className="text-center text-gray-500">
-              No hay tareas pendientes
+              {searchQuery
+                ? 'No se encontraron tareas'
+                : selectedFilter === 'completed'
+                ? 'No hay tareas completadas'
+                : selectedFilter === 'pending'
+                ? 'No hay tareas pendientes'
+                : 'No hay tareas creadas'}
             </Text>
           </View>
         }
@@ -237,7 +361,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               </View>
 
-              <View className="space-y-4">
+              <View className="flex gap-2">
                 {/* Título */}
                 <View>
                   <Text className="mb-2 text-sm text-gray-400">TÍTULO</Text>
@@ -273,34 +397,72 @@ export default function HomeScreen() {
                 {/* Prioridad */}
                 <View>
                   <Text className="mb-2 text-sm text-gray-400">PRIORIDAD</Text>
-                  <View className="flex-row space-x-3">
-                    {['high', 'medium', 'low'].map((priority) => (
+                  <View className="flex-row gap-2">
+                    {[
+                      {
+                        value: 'high',
+                        label: 'Alta',
+                        bgColor: 'bg-red-600',
+                        borderColor: 'border-red-700',
+                        hoverBg: 'bg-red-700',
+                      },
+                      {
+                        value: 'medium',
+                        label: 'Media',
+                        bgColor: 'bg-yellow-500',
+                        borderColor: 'border-yellow-600',
+                        hoverBg: 'bg-yellow-600',
+                      },
+                      {
+                        value: 'low',
+                        label: 'Baja',
+                        bgColor: 'bg-green-600',
+                        borderColor: 'border-green-700',
+                        hoverBg: 'bg-green-700',
+                      },
+                    ].map((priority) => (
                       <TouchableOpacity
-                        key={priority}
-                        onPress={() => setNewTask({ ...newTask, priority })}
-                        className={`flex-1 py-3 rounded-xl flex-row items-center justify-center space-x-2
-                          ${
-                            newTask.priority === priority
-                              ? 'bg-purple-600'
-                              : 'bg-gray-800 border border-gray-700'
-                          }`}
+                        key={priority.value}
+                        onPress={() =>
+                          setNewTask({ ...newTask, priority: priority.value })
+                        }
+                        className={`flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2
+          ${
+            newTask.priority === priority.value
+              ? priority.bgColor
+              : 'bg-gray-800 border border-gray-700'
+          }`}
+                        style={{
+                          shadowColor:
+                            newTask.priority === priority.value
+                              ? priority.value === 'high'
+                                ? '#ef4444'
+                                : priority.value === 'medium'
+                                ? '#eab308'
+                                : '#22c55e'
+                              : 'transparent',
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.25,
+                          shadowRadius: 3.84,
+                          elevation: 5,
+                        }}
                       >
                         <Flag
                           size={16}
                           color={
-                            newTask.priority === priority
+                            newTask.priority === priority.value
                               ? '#ffffff'
                               : '#9CA3AF'
                           }
                         />
                         <Text
                           className={`${
-                            newTask.priority === priority
-                              ? 'text-white'
+                            newTask.priority === priority.value
+                              ? 'text-white font-medium'
                               : 'text-gray-400'
                           }`}
                         >
-                          {getPriorityLabel(priority)}
+                          {priority.label}
                         </Text>
                       </TouchableOpacity>
                     ))}
@@ -309,7 +471,13 @@ export default function HomeScreen() {
 
                 {/* Botón de guardar */}
                 <TouchableOpacity
-                  className="items-center w-full py-4 mt-4 bg-purple-600 rounded-xl"
+                  className={`items-center w-full py-4 mt-4 rounded-xl ${
+                    newTask.priority === 'high'
+                      ? 'bg-red-600'
+                      : newTask.priority === 'medium'
+                      ? 'bg-yellow-500'
+                      : 'bg-green-600'
+                  }`}
                   onPress={handleAddTask}
                 >
                   <Text className="text-lg font-semibold text-white">

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { Text, View, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -25,7 +25,6 @@ export default function ProfileScreen() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      console.log('Sesión cerrada');
       router.replace('LoginScreen');
     } catch (error) {
       console.error('Error al cerrar sesión:', error.message);
@@ -76,9 +75,16 @@ export default function ProfileScreen() {
         {/* Header con información del perfil */}
         <View className="px-6 pt-6">
           <View className="items-center">
-            <View className="items-center justify-center w-24 h-24 mb-4 bg-gray-800 rounded-full">
-              <User size={40} color="#9CA3AF" strokeWidth={1.5} />
-            </View>
+            {userInfo?.avatarUrl ? (
+              <Image
+                source={{ uri: userInfo.avatarUrl }}
+                className="w-24 h-24 mb-4 rounded-full"
+              />
+            ) : (
+              <View className="items-center justify-center w-24 h-24 mb-4 bg-gray-800 rounded-full">
+                <User size={40} color="#9CA3AF" strokeWidth={1.5} />
+              </View>
+            )}
             <Text className="mb-1 text-xl font-semibold text-white">
               {userInfo?.name || 'Usuario'}
             </Text>
