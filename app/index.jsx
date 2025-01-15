@@ -39,21 +39,21 @@ export default function App() {
       <StatusBar style="light" />
 
       {/* Contenedor Principal con gradiente sutil */}
-      <View className="flex-1 px-6 justify-between py-10 bg-gradient-to-b from-gray-900 to-gray-800">
+      <View className="justify-between flex-1 px-6 py-10 bg-gradient-to-b from-gray-900 to-gray-800">
         {/* Sección Superior */}
-        <View className="flex-1 items-center justify-center">
+        <View className="items-center justify-center flex-1">
           {/* Logo o Imagen Principal con efecto de brillo */}
-          <View className="w-64 h-64 bg-gray-800 rounded-full items-center justify-center mb-8 shadow-lg border border-gray-700">
+          <View className="items-center justify-center w-64 h-64 mb-8 bg-gray-800 border border-gray-700 rounded-full shadow-lg">
             <View className="absolute w-full h-full rounded-full bg-purple-500/10" />
             <Text className="text-6xl">✨</Text>
           </View>
 
           {/* Textos de Bienvenida con gradiente */}
-          <Text className="text-4xl font-bold text-white mb-4 text-center">
+          <Text className="mb-4 text-4xl font-bold text-center text-white">
             Simple Task
           </Text>
 
-          <Text className="text-base text-gray-400 text-center px-4 max-w-xs">
+          <Text className="max-w-xs px-4 text-base text-center text-gray-400">
             Organiza tus tareas de manera eficiente y mejora tu productividad
             diaria
           </Text>
@@ -62,25 +62,25 @@ export default function App() {
         {/* Sección Inferior - Botones */}
         <View className="w-full mt-8">
           <TouchableOpacity
-            className="bg-purple-600 py-4 rounded-2xl w-full mb-4 shadow-lg shadow-purple-600/20"
+            className="w-full py-4 mb-4 bg-purple-600 shadow-lg rounded-2xl shadow-purple-600/20"
             onPress={handleLogin}
           >
-            <Text className="text-white text-center font-semibold text-lg">
+            <Text className="text-lg font-semibold text-center text-white">
               Iniciar Sesión
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            className="bg-gray-800 border border-gray-700 py-4 rounded-2xl w-full shadow-lg"
+            className="w-full py-4 bg-gray-800 border border-gray-700 shadow-lg rounded-2xl"
             onPress={handleSignup}
           >
-            <Text className="text-purple-400 text-center font-semibold text-lg">
+            <Text className="text-lg font-semibold text-center text-purple-400">
               Crear Cuenta
             </Text>
           </TouchableOpacity>
 
           {/* Texto adicional */}
-          <Text className="text-gray-500 text-center mt-6 text-sm">
+          <Text className="mt-6 text-sm text-center text-gray-500">
             Tu productividad, reinventada
           </Text>
         </View>

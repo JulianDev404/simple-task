@@ -3,8 +3,10 @@ import { View, Text } from 'react-native';
 import { ClipboardList, Calendar, BarChart2, User } from 'lucide-react-native';
 import { TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function HomeLayout() {
+  const { theme, isDarkMode } = useTheme();
   const MenuButton = ({ title, Icon, color, onPress }) => {
     return (
       <TouchableOpacity
@@ -28,22 +30,25 @@ export default function HomeLayout() {
     <Tabs
       screenOptions={{
         tabBarStyle: {
-          backgroundColor: '#111827', // bg-gray-900
+          backgroundColor: isDarkMode ? '#111827' : '#ffffff',
           borderTopWidth: 1,
-          borderTopColor: '#1F2937', // border-gray-800
+          borderTopColor: isDarkMode ? '#1F2937' : '#f3f4f6',
           paddingBottom: 0,
           paddingTop: 8,
-          height: 90,
+          height: 88,
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
         },
         tabBarBackground: () => (
-          <View className="absolute inset-0 bg-gray-900" />
+          <View
+            className={isDarkMode ? 'bg-gray-900' : 'bg-white'}
+            style={{ flex: 1 }}
+          />
         ),
-        tabBarActiveTintColor: '#9333EA', // text-purple-600
-        tabBarInactiveTintColor: '#6B7280', // text-gray-500
+        tabBarActiveTintColor: '#9333EA',
+        tabBarInactiveTintColor: isDarkMode ? '#6B7280' : '#9CA3AF',
         headerShown: false,
         tabBarShowLabel: false,
         tabBarItemStyle: {
